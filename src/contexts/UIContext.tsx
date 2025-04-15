@@ -3,17 +3,19 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 // Available UI themes
 export type Theme = 'light' | 'dark' | 'system';
 
-// Available sections in the application
-export type ActiveSection = 
-  | 'home'
-  | 'blueprint-editor'
-  | 'component-library'
-  | 'properties-panel'
-  | 'settings'
-  | 'data-connectivity'
-  | 'llm-integration'
-  | 'application-export'
-  | 'plugin-manager';
+// Available tabs in the application
+export type ActiveTab = 'designer' | 'blueprint' | 'data' | 'llm' | 'plugins' | 'export';
+
+// Notification types
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
+// Notification interface
+export interface Notification {
+  id: string;
+  message: string;
+  type: NotificationType;
+  timestamp: number;
+}
 
 // UI Context type definition
 interface UIContextType {
@@ -21,54 +23,66 @@ interface UIContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   
-  // Active section and navigation
-  activeSection: ActiveSection;
-  setActiveSection: (section: ActiveSection) => void;
+  // Active tab and navigation
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
   
-  // Sidebar states
-  leftSidebarOpen: boolean;
-  setLeftSidebarOpen: (open: boolean) => void;
-  rightSidebarOpen: boolean;
-  setRightSidebarOpen: (open: boolean) => void;
+  // Component selection
+  selectedComponentIds: string[];
+  setSelectedComponentIds: (ids: string[]) => void;
+  selectedComponent: any;
+  setSelectedComponent: (component: any) => void;
+  
+  // Panel states
+  isPropertiesPanelOpen: boolean;
+  setPropertiesPanelOpen: (open: boolean) => void;
+  isNodeLibraryOpen: boolean;
+  setNodeLibraryOpen: (open: boolean) => void;
+  isComponentLibraryOpen: boolean;
+  setComponentLibraryOpen: (open: boolean) => void;
   
   // Modal management
   activeModal: string | null;
-  openModal: (modalId: string) => void;
+  openModal: (modalId: string, props?: any) => void;
   closeModal: () => void;
+  modalProps: any;
   
-  // Toast notifications
-  showToast: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
-  
-  // Loading state
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  loadingMessage: string;
-  setLoadingMessage: (message: string) => void;
+  // Notifications
+  notifications: Notification[];
+  showNotification: (message: string, type?: NotificationType) => void;
+  removeNotification: (id: string) => void;
+  clearNotifications: () => void;
 }
 
 // Create the default context
 const defaultUIContext: UIContextType = {
-  theme: 'system',
+  theme: 'dark',
   setTheme: () => {},
   
-  activeSection: 'home',
-  setActiveSection: () => {},
+  activeTab: 'designer',
+  setActiveTab: () => {},
   
-  leftSidebarOpen: true,
-  setLeftSidebarOpen: () => {},
-  rightSidebarOpen: true,
-  setRightSidebarOpen: () => {},
+  selectedComponentIds: [],
+  setSelectedComponentIds: () => {},
+  selectedComponent: null,
+  setSelectedComponent: () => {},
+  
+  isPropertiesPanelOpen: true,
+  setPropertiesPanelOpen: () => {},
+  isNodeLibraryOpen: true,
+  setNodeLibraryOpen: () => {},
+  isComponentLibraryOpen: true,
+  setComponentLibraryOpen: () => {},
   
   activeModal: null,
   openModal: () => {},
   closeModal: () => {},
+  modalProps: {},
   
-  showToast: () => {},
-  
-  isLoading: false,
-  setIsLoading: () => {},
-  loadingMessage: '',
-  setLoadingMessage: () => {}
+  notifications: [],
+  showNotification: () => {},
+  removeNotification: () => {},
+  clearNotifications: () => {}
 };
 
 // Create the UI context
@@ -92,22 +106,27 @@ export const UIProvider = ({ children }: UIProviderProps) => {
     if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system')) {
       return savedTheme as Theme;
     }
-    return 'system';
+    return 'dark';
   });
   
-  // Active section
-  const [activeSection, setActiveSection] = useState<ActiveSection>('home');
+  // Active tab
+  const [activeTab, setActiveTab] = useState<ActiveTab>('designer');
   
-  // Sidebar states
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState<boolean>(true);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState<boolean>(true);
+  // Selected components
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
+  const [selectedComponent, setSelectedComponent] = useState<any>(null);
+  
+  // Panel states
+  const [isPropertiesPanelOpen, setPropertiesPanelOpen] = useState<boolean>(true);
+  const [isNodeLibraryOpen, setNodeLibraryOpen] = useState<boolean>(true);
+  const [isComponentLibraryOpen, setComponentLibraryOpen] = useState<boolean>(true);
   
   // Modal management
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [modalProps, setModalProps] = useState<any>({});
   
-  // Loading state
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  // Notifications
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   
   /**
    * Set the active theme and store it in localStorage
@@ -117,19 +136,15 @@ export const UIProvider = ({ children }: UIProviderProps) => {
     localStorage.setItem('anvil-theme', newTheme);
     
     // Apply the theme to the document
-    if (newTheme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-    } else {
-      document.documentElement.setAttribute('data-theme', newTheme);
-    }
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
   
   /**
    * Open a modal by ID
    */
-  const openModal = (modalId: string): void => {
+  const openModal = (modalId: string, props: any = {}): void => {
     setActiveModal(modalId);
+    setModalProps(props);
   };
   
   /**
@@ -137,65 +152,79 @@ export const UIProvider = ({ children }: UIProviderProps) => {
    */
   const closeModal = (): void => {
     setActiveModal(null);
+    setModalProps({});
   };
   
   /**
-   * Show a toast notification
+   * Show a notification
    */
-  const showToast = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void => {
-    // In a real implementation, this would add a toast to a toast queue
-    console.log(`Toast (${type}): ${message}`);
+  const showNotification = (message: string, type: NotificationType = 'info'): void => {
+    const id = Date.now().toString();
+    const notification: Notification = {
+      id,
+      message,
+      type,
+      timestamp: Date.now()
+    };
     
-    // Simple alert for now
-    if (type === 'error') {
-      alert(`Error: ${message}`);
-    } else {
-      alert(message);
+    setNotifications(prev => [...prev, notification]);
+    
+    // Auto remove non-error notifications after 5 seconds
+    if (type !== 'error') {
+      setTimeout(() => {
+        removeNotification(id);
+      }, 5000);
     }
+  };
+  
+  /**
+   * Remove a notification by ID
+   */
+  const removeNotification = (id: string): void => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  };
+  
+  /**
+   * Clear all notifications
+   */
+  const clearNotifications = (): void => {
+    setNotifications([]);
   };
   
   // Apply the theme when the component mounts
   React.useEffect(() => {
     handleSetTheme(theme);
-    
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        document.documentElement.setAttribute('data-theme', mediaQuery.matches ? 'dark' : 'light');
-      }
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, [theme]);
+  }, []);
   
   return (
     <UIContext.Provider value={{
       theme,
       setTheme: handleSetTheme,
       
-      activeSection,
-      setActiveSection,
+      activeTab,
+      setActiveTab,
       
-      leftSidebarOpen,
-      setLeftSidebarOpen,
-      rightSidebarOpen,
-      setRightSidebarOpen,
+      selectedComponentIds,
+      setSelectedComponentIds,
+      selectedComponent,
+      setSelectedComponent,
+      
+      isPropertiesPanelOpen,
+      setPropertiesPanelOpen,
+      isNodeLibraryOpen,
+      setNodeLibraryOpen,
+      isComponentLibraryOpen,
+      setComponentLibraryOpen,
       
       activeModal,
       openModal,
       closeModal,
+      modalProps,
       
-      showToast,
-      
-      isLoading,
-      setIsLoading,
-      loadingMessage,
-      setLoadingMessage
+      notifications,
+      showNotification,
+      removeNotification,
+      clearNotifications
     }}>
       {children}
     </UIContext.Provider>
