@@ -1,4 +1,9 @@
-# Anvil Desktop Platform - No code / Low code Application Builder
+
+<p align="center" marginbottom="5px">
+  <img src="src\assets\Anvil-logo.png" alt="Anvil Logo" width="500"/>
+</p>
+
+<h3 align="center">No code / Low code Application Builder</h3>
 
 ## Project Overview
 

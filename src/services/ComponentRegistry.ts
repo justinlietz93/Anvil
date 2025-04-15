@@ -171,9 +171,9 @@ class ComponentRegistryClass {
       renderComponent: (props: any) => {
         const { text, primary, disabled } = props;
         if (primary) {
-          return <PrimaryButton text={text} disabled={disabled} />;
+          return React.createElement(PrimaryButton, { text, disabled });
         }
-        return <DefaultButton text={text} disabled={disabled} />;
+        return React.createElement(DefaultButton, { text, disabled });
       }
     });
 
@@ -218,12 +218,12 @@ class ComponentRegistryClass {
       },
       renderComponent: (props: any) => {
         const { label, placeholder, multiline, disabled } = props;
-        return <TextField 
-          label={label} 
-          placeholder={placeholder} 
-          multiline={multiline} 
-          disabled={disabled} 
-        />;
+        return React.createElement(TextField, { 
+          label, 
+          placeholder, 
+          multiline, 
+          disabled
+        });
       }
     });
 
@@ -254,7 +254,7 @@ class ComponentRegistryClass {
       },
       renderComponent: (props: any) => {
         const { text, required } = props;
-        return <Label required={required}>{text}</Label>;
+        return React.createElement(Label, { required }, text);
       }
     });
 
@@ -292,11 +292,11 @@ class ComponentRegistryClass {
       },
       renderComponent: (props: any) => {
         const { label, checked, disabled } = props;
-        return <Checkbox 
-          label={label} 
-          checked={checked} 
-          disabled={disabled} 
-        />;
+        return React.createElement(Checkbox, { 
+          label, 
+          checked, 
+          disabled
+        });
       }
     });
 
@@ -356,12 +356,12 @@ class ComponentRegistryClass {
           ];
         }
         
-        return <Dropdown 
-          label={label} 
-          placeholder={placeholder} 
-          options={optionsArray} 
-          disabled={disabled} 
-        />;
+        return React.createElement(Dropdown, { 
+          label, 
+          placeholder, 
+          options: optionsArray, 
+          disabled
+        });
       }
     });
 
@@ -406,12 +406,12 @@ class ComponentRegistryClass {
       },
       renderComponent: (props: any) => {
         const { src, alt, width, height } = props;
-        return <Image 
-          src={src} 
-          alt={alt} 
-          width={width} 
-          height={height} 
-        />;
+        return React.createElement(Image, { 
+          src, 
+          alt, 
+          width, 
+          height
+        });
       }
     });
 
@@ -442,12 +442,20 @@ class ComponentRegistryClass {
       },
       renderComponent: (props: any) => {
         const { title, showTitle } = props;
-        return (
-          <div style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
-            {showTitle && <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>{title}</div>}
-            <div>Container Content</div>
-          </div>
-        );
+        const containerStyle = { 
+          padding: '10px', 
+          border: '1px solid #ccc', 
+          borderRadius: '4px' 
+        };
+        const titleStyle = { 
+          marginBottom: '8px', 
+          fontWeight: 'bold' 
+        };
+        
+        const titleElement = showTitle ? React.createElement('div', { style: titleStyle }, title) : null;
+        const contentElement = React.createElement('div', {}, 'Container Content');
+        
+        return React.createElement('div', { style: containerStyle }, [titleElement, contentElement]);
       }
     });
   }
