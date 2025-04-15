@@ -5,64 +5,139 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
     <title>Anvil - No-Code Application Builder</title>
     <style>
+      :root {
+        /* Dark Theme Colors */
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #252525;
+        --bg-tertiary: #2d2d2d;
+        --bg-elevated: #333333;
+        
+        --text-primary: #ffffff;
+        --text-secondary: #cccccc;
+        --text-muted: #999999;
+        
+        --border-color: #3d3d3d;
+        --highlight-color: #007ACC;
+        --highlight-hover: #0099ff;
+        
+        --node-bg: #2d2d2d;
+        --node-header: #333333;
+        --node-border: #444444;
+        
+        --success-color: #4caf50;
+        --warning-color: #ff9800;
+        --error-color: #f44336;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
       body {
         margin: 0;
         padding: 0;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        background-color: #f5f5f5;
-        color: #333;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
         height: 100vh;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        font-size: 14px;
       }
       
       /* Menu bar styles */
       .menu-bar {
-        background-color: #1e1e1e;
-        color: white;
+        background-color: var(--bg-secondary);
+        color: var(--text-secondary);
         display: flex;
         padding: 0;
         margin: 0;
+        height: 30px;
+        align-items: center;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border-color);
       }
       
       .menu-bar .menu-item {
-        padding: 6px 14px;
+        padding: 0 14px;
+        height: 100%;
         cursor: pointer;
+        display: flex;
+        align-items: center;
       }
       
       .menu-bar .menu-item:hover {
-        background-color: #333;
+        background-color: var(--bg-elevated);
+        color: var(--text-primary);
       }
       
       /* Header styles */
       .app-header {
-        background-color: #007ACC;
-        color: white;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
         padding: 10px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        height: 48px;
+        border-bottom: 1px solid var(--border-color);
       }
       
       .app-title {
         margin: 0;
-        font-size: 20px;
-        font-weight: normal;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
       }
       
       .app-actions button {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--bg-elevated);
         border: none;
-        color: white;
+        color: var(--text-primary);
         padding: 6px 14px;
         margin-left: 10px;
-        border-radius: 2px;
+        border-radius: 4px;
         cursor: pointer;
+        font-size: 13px;
+        transition: background-color 0.2s;
       }
       
       .app-actions button:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--highlight-color);
+      }
+      
+      /* Tab Navigation styles */
+      .tab-navigation {
+        background-color: var(--bg-secondary);
+        display: flex;
+        padding: 0;
+        margin: 0;
+        height: 40px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      .tab-item {
+        padding: 0 20px;
+        cursor: pointer;
+        font-size: 14px;
+        border-bottom: 2px solid transparent;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        color: var(--text-secondary);
+      }
+      
+      .tab-item:hover {
+        color: var(--text-primary);
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      
+      .tab-item.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--highlight-color);
+        font-weight: 500;
+        background-color: rgba(0, 122, 204, 0.05);
       }
       
       /* Main content area */
@@ -74,33 +149,42 @@
       
       /* Components panel */
       .components-panel {
-        width: 225px;
-        background-color: #f0f0f0;
-        border-right: 1px solid #ddd;
+        width: 220px;
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
       }
       
       .panel-header {
-        background-color: #e0e0e0;
+        background-color: var(--bg-secondary);
         padding: 10px 15px;
         font-weight: 500;
-        border-bottom: 1px solid #ddd;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
       }
       
       .component-list {
-        padding: 0;
+        padding: 10px 0;
       }
       
       .component-item {
-        padding: 10px 15px;
-        border-bottom: 1px solid #eee;
+        padding: 8px 15px;
+        margin: 0 10px 6px;
         cursor: grab;
         user-select: none;
-        background-color: white;
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 4px;
+        transition: all 0.2s;
       }
       
       .component-item:hover {
-        background-color: #f5f5f5;
+        background-color: var(--bg-elevated);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       }
       
       /* Workspace area */
@@ -109,13 +193,16 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        background-color: var(--bg-primary);
       }
       
       .workspace-header {
-        background-color: #f0f0f0;
+        background-color: var(--bg-secondary);
         padding: 10px 15px;
         font-weight: 500;
-        border-bottom: 1px solid #ddd;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
       }
       
       .workspace {
@@ -123,19 +210,26 @@
         padding: 20px;
         overflow: auto;
         position: relative;
-        background-color: white;
+        background-color: var(--bg-primary);
       }
       
       .workspace-content {
         position: relative;
         min-height: 100%;
-        border: 1px dashed #ccc;
+        border: 1px dashed var(--border-color);
         padding: 10px;
+        border-radius: 4px;
       }
       
       .workspace-help {
-        color: #888;
-        padding: 10px 0;
+        color: var(--text-muted);
+        padding: 20px;
+        text-align: center;
+        font-style: italic;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
       }
       
       /* Component instances in workspace */
@@ -143,45 +237,256 @@
         position: absolute;
         z-index: 10;
         cursor: move;
+        border-radius: 4px;
+        overflow: hidden;
       }
       
       .ui-button {
-        background-color: #007ACC;
-        color: white;
+        background-color: var(--highlight-color);
+        color: var(--text-primary);
         border: none;
-        padding: 6px 14px;
-        border-radius: 2px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 13px;
       }
       
       .ui-input {
         display: inline-block;
-        border: 1px solid #007ACC;
-        padding: 5px;
-        min-width: 100px;
-        border-radius: 2px;
+        border: 1px solid var(--border-color);
+        padding: 8px 10px;
+        min-width: 120px;
+        border-radius: 4px;
+        background-color: var(--bg-elevated);
+        color: var(--text-primary);
       }
       
       .ui-label {
-        background-color: #007ACC;
-        color: white;
-        padding: 6px 14px;
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 8px 16px;
         display: inline-block;
-        border-radius: 2px;
+        border-radius: 4px;
       }
       
       /* Status bar */
       .status-bar {
-        background-color: #f0f0f0;
+        background-color: var(--bg-secondary);
         padding: 4px 10px;
         font-size: 12px;
-        border-top: 1px solid #ddd;
+        color: var(--text-secondary);
+        border-top: 1px solid var(--border-color);
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
+        align-items: center;
+        height: 24px;
       }
       
       .selected-component {
-        outline: 2px solid #007ACC;
+        outline: 2px solid var(--highlight-color);
         outline-offset: 2px;
+      }
+      
+      /* Tab Content styles */
+      .tab-content {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+      }
+      
+      .tab-content.active {
+        display: flex;
+      }
+      
+      /* Blueprint Editor styles */
+      .blueprint-editor {
+        display: flex;
+        flex: 1;
+        height: 100%;
+      }
+      
+      .node-library {
+        width: 250px;
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
+        padding: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .node-library-header {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      .node-library-search {
+        width: 100%;
+        padding: 6px 10px;
+        background-color: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 4px;
+        margin: 0 0 10px 0;
+        font-size: 13px;
+      }
+      
+      .node-library-search:focus {
+        outline: none;
+        border-color: var(--highlight-color);
+      }
+      
+      .node-list {
+        padding: 0 15px;
+      }
+      
+      .node-category {
+        margin-bottom: 15px;
+      }
+      
+      .category-title {
+        font-weight: 500;
+        margin: 15px 0 10px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .node-item {
+        background-color: var(--bg-tertiary);
+        margin-bottom: 6px;
+        padding: 8px 10px;
+        border-radius: 4px;
+        cursor: grab;
+        transition: all 0.2s;
+        border: 1px solid var(--node-border);
+        font-size: 13px;
+      }
+      
+      .node-item:hover {
+        background-color: var(--bg-elevated);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      
+      .blueprint-canvas {
+        flex: 1;
+        background-color: var(--bg-primary);
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+        position: relative;
+        overflow: auto;
+      }
+      
+      /* Blueprint nodes */
+      .anvil-node {
+        position: absolute;
+        background-color: var(--node-bg);
+        border: 1px solid var(--node-border);
+        border-radius: 4px;
+        min-width: 180px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        z-index: 5;
+        overflow: hidden;
+      }
+      
+      .anvil-node.selected {
+        border-color: var(--highlight-color);
+        box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3), 0 2px 10px rgba(0, 0, 0, 0.4);
+      }
+      
+      .anvil-node-header {
+        background-color: var(--node-header);
+        color: var(--text-primary);
+        padding: 8px 12px;
+        font-weight: 500;
+        border-bottom: 1px solid var(--node-border);
+        font-size: 13px;
+      }
+      
+      .anvil-node-content {
+        padding: 10px;
+      }
+      
+      /* Node ports */
+      .anvil-node-port {
+        display: flex;
+        align-items: center;
+        margin: 6px 0;
+        font-size: 12px;
+        position: relative;
+      }
+      
+      .anvil-node-port-dot {
+        width: 10px;
+        height: 10px;
+        background-color: var(--highlight-color);
+        border-radius: 50%;
+      }
+      
+      .anvil-node-port-input {
+        justify-content: flex-start;
+        text-align: left;
+      }
+      
+      .anvil-node-port-output {
+        justify-content: flex-end;
+        text-align: right;
+      }
+      
+      .anvil-node-port-input .anvil-node-port-dot {
+        margin-right: 8px;
+      }
+      
+      .anvil-node-port-output .anvil-node-port-dot {
+        margin-left: 8px;
+      }
+      
+      .anvil-connection-layer {
+        pointer-events: none;
+      }
+      
+      .anvil-connection {
+        stroke: var(--highlight-color);
+        stroke-width: 2;
+        fill: none;
+      }
+      
+      .anvil-connection-preview {
+        stroke: var(--highlight-color);
+        stroke-opacity: 0.7;
+        stroke-dasharray: 5, 5;
+      }
+      
+      /* Scrollbars */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: var(--bg-elevated);
+        border-radius: 5px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      
+      /* Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
       }
     </style>
   </head>
@@ -195,7 +500,7 @@
     </div>
     
     <div class="app-header">
-      <h1 class="app-title">Anvil - No-Code Application Builder</h1>
+      <h1 class="app-title">Anvil Studio</h1>
       <div class="app-actions">
         <button id="new-project">New Project</button>
         <button id="open-project">Open Project</button>
@@ -203,31 +508,111 @@
       </div>
     </div>
     
-    <div class="app-content">
-      <div class="components-panel">
-        <div class="panel-header">Components</div>
-        <div class="component-list">
-          <div class="component-item" draggable="true" data-component-type="button">Button</div>
-          <div class="component-item" draggable="true" data-component-type="input">Text Input</div>
-          <div class="component-item" draggable="true" data-component-type="label">Label</div>
-          <div class="component-item" draggable="true" data-component-type="container">Container</div>
-          <div class="component-item" draggable="true" data-component-type="image">Image</div>
-          <div class="component-item" draggable="true" data-component-type="dropdown">Dropdown</div>
-          <div class="component-item" draggable="true" data-component-type="checkbox">Checkbox</div>
+    <!-- Navigation Tabs -->
+    <div class="tab-navigation">
+      <div class="tab-item active" data-tab="designer">Visual Designer</div>
+      <div class="tab-item" data-tab="blueprint">Blueprint Editor</div>
+      <div class="tab-item" data-tab="data">Data Connectivity</div>
+      <div class="tab-item" data-tab="llm">LLM Integration</div>
+      <div class="tab-item" data-tab="plugins">Plugins</div>
+    </div>
+    
+    <!-- Visual Designer Tab -->
+    <div class="tab-content active" id="designer-tab">
+      <div class="app-content">
+        <div class="components-panel">
+          <div class="panel-header">Components</div>
+          <div class="component-list">
+            <div class="component-item" draggable="true" data-component-type="button">Button</div>
+            <div class="component-item" draggable="true" data-component-type="input">Text Input</div>
+            <div class="component-item" draggable="true" data-component-type="label">Label</div>
+            <div class="component-item" draggable="true" data-component-type="container">Container</div>
+            <div class="component-item" draggable="true" data-component-type="image">Image</div>
+            <div class="component-item" draggable="true" data-component-type="dropdown">Dropdown</div>
+            <div class="component-item" draggable="true" data-component-type="checkbox">Checkbox</div>
+          </div>
         </div>
-      </div>
-      
-      <div class="workspace-container">
-        <div class="workspace-header">Workspace</div>
-        <div class="workspace">
-          <div class="workspace-help">Drag components from the sidebar to start building your application.</div>
-          <div id="workspace-content" class="workspace-content"></div>
+        
+        <div class="workspace-container">
+          <div class="workspace-header">Workspace</div>
+          <div class="workspace">
+            <div class="workspace-help">Drag components from the sidebar to start building your application.</div>
+            <div id="workspace-content" class="workspace-content"></div>
+          </div>
         </div>
       </div>
     </div>
     
+    <!-- Blueprint Editor Tab -->
+    <div class="tab-content" id="blueprint-tab">
+      <div class="blueprint-editor">
+        <div class="node-library">
+          <div class="node-library-header">
+            <h3>Node Library</h3>
+            <input type="text" class="node-library-search" placeholder="Search nodes...">
+          </div>
+          
+          <div class="node-list">
+            <div class="node-category">
+              <div class="category-title">API</div>
+              <div class="node-item" draggable="true" data-node-type="api-request">API Request</div>
+              <div class="node-item" draggable="true" data-node-type="api-route">API Route Handler</div>
+              <div class="node-item" draggable="true" data-node-type="api-response">API Response</div>
+              <div class="node-item" draggable="true" data-node-type="authentication">Authentication</div>
+              <div class="node-item" draggable="true" data-node-type="database">Database Integration</div>
+              <div class="node-item" draggable="true" data-node-type="validation">API Validation</div>
+            </div>
+            
+            <div class="node-category">
+              <div class="category-title">Logic</div>
+              <div class="node-item" draggable="true" data-node-type="if-condition">If Condition</div>
+              <div class="node-item" draggable="true" data-node-type="switch">Switch</div>
+              <div class="node-item" draggable="true" data-node-type="loop">Loop</div>
+            </div>
+            
+            <div class="node-category">
+              <div class="category-title">Data</div>
+              <div class="node-item" draggable="true" data-node-type="data-transform">Transform</div>
+              <div class="node-item" draggable="true" data-node-type="filter">Filter</div>
+              <div class="node-item" draggable="true" data-node-type="sort">Sort</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="blueprint-canvas">
+          <!-- This is where nodes would be placed and connected -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-secondary); font-style: italic;">
+            Drag nodes from the library to start building your API flow
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Other tabs (placeholders) -->
+    <div class="tab-content" id="data-tab">
+      <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+        <h2>Data Connectivity</h2>
+        <p>Configure your database connections and data models here.</p>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="llm-tab">
+      <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+        <h2>LLM Integration</h2>
+        <p>Connect to AI language models and configure prompts.</p>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="plugins-tab">
+      <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+        <h2>Plugins</h2>
+        <p>Manage and configure extensions for Anvil.</p>
+      </div>
+    </div>
+    
     <div class="status-bar">
-      Anvil Platform v1.0.0 - © 2025 Anvil
+      <div>Anvil Studio v1.0.0</div>
+      <div>Ready</div>
     </div>
     
     <script>
@@ -304,8 +689,9 @@
             element.className = 'ui-component';
             element.style.width = '120px';
             element.style.height = '80px';
-            element.style.border = '1px solid #007ACC';
-            element.style.backgroundColor = '#f0f0f0';
+            element.style.border = '1px solid var(--border-color)';
+            element.style.backgroundColor = 'var(--bg-tertiary)';
+            element.style.borderRadius = '4px';
             break;
             
           case 'image':
@@ -313,16 +699,23 @@
             element.className = 'ui-component';
             element.style.width = '120px';
             element.style.height = '80px';
-            element.style.backgroundColor = '#ccc';
+            element.style.backgroundColor = 'var(--bg-elevated)';
             element.textContent = 'Image';
             element.style.display = 'flex';
             element.style.justifyContent = 'center';
             element.style.alignItems = 'center';
+            element.style.borderRadius = '4px';
             break;
             
           case 'dropdown':
             element = document.createElement('select');
             element.className = 'ui-component';
+            element.style.padding = '6px 10px';
+            element.style.backgroundColor = 'var(--bg-elevated)';
+            element.style.border = '1px solid var(--border-color)';
+            element.style.color = 'var(--text-primary)';
+            element.style.borderRadius = '4px';
+            
             const opt1 = document.createElement('option');
             opt1.text = 'Option 1';
             const opt2 = document.createElement('option');
@@ -334,14 +727,21 @@
           case 'checkbox':
             const cbContainer = document.createElement('div');
             cbContainer.className = 'ui-component';
+            cbContainer.style.padding = '8px';
+            cbContainer.style.backgroundColor = 'var(--bg-tertiary)';
+            cbContainer.style.borderRadius = '4px';
+            cbContainer.style.display = 'flex';
+            cbContainer.style.alignItems = 'center';
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = id;
+            checkbox.style.marginRight = '8px';
             
             const label = document.createElement('label');
             label.htmlFor = id;
             label.textContent = 'Checkbox';
+            label.style.color = 'var(--text-primary)';
             
             cbContainer.appendChild(checkbox);
             cbContainer.appendChild(label);
@@ -539,6 +939,161 @@
           }
         }
       });
+      
+      // Tab Navigation
+      document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Set active tab
+          document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Show active tab content
+          const targetTab = tab.getAttribute('data-tab');
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          document.getElementById(`${targetTab}-tab`).classList.add('active');
+        });
+      });
+      
+      // Blueprint Editor Node Dragging
+      document.querySelectorAll('.node-item').forEach(node => {
+        node.addEventListener('dragstart', (e) => {
+          const nodeData = {
+            type: 'node',
+            nodeId: node.getAttribute('data-node-type')
+          };
+          e.dataTransfer.setData('application/json', JSON.stringify(nodeData));
+        });
+      });
+      
+      // Initialize blueprint canvas as a drop target
+      const blueprintCanvas = document.querySelector('.blueprint-canvas');
+      if (blueprintCanvas) {
+        blueprintCanvas.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        
+        blueprintCanvas.addEventListener('drop', (e) => {
+          e.preventDefault();
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (data.type === 'node') {
+              // Calculate drop position
+              const rect = blueprintCanvas.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              
+              // Create an example node visual
+              createExampleNode(data.nodeId, x, y);
+            }
+          } catch (err) {
+            console.error('Invalid drop data', err);
+          }
+        });
+      }
+      
+      // Create a simple node visual for demonstration
+      function createExampleNode(nodeType, x, y) {
+        const node = document.createElement('div');
+        node.className = 'anvil-node';
+        node.style.left = `${x}px`;
+        node.style.top = `${y}px`;
+        
+        const header = document.createElement('div');
+        header.className = 'anvil-node-header';
+        header.textContent = nodeType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        const content = document.createElement('div');
+        content.className = 'anvil-node-content';
+        
+        // Add some example ports
+        const inputPorts = document.createElement('div');
+        inputPorts.className = 'anvil-node-input-ports';
+        
+        const inputPort = document.createElement('div');
+        inputPort.className = 'anvil-node-port anvil-node-port-input';
+        
+        const inputDot = document.createElement('div');
+        inputDot.className = 'anvil-node-port-dot';
+        
+        const inputLabel = document.createElement('span');
+        inputLabel.textContent = 'Input';
+        
+        inputPort.appendChild(inputDot);
+        inputPort.appendChild(inputLabel);
+        inputPorts.appendChild(inputPort);
+        
+        const outputPorts = document.createElement('div');
+        outputPorts.className = 'anvil-node-output-ports';
+        
+        const outputPort = document.createElement('div');
+        outputPort.className = 'anvil-node-port anvil-node-port-output';
+        
+        const outputLabel = document.createElement('span');
+        outputLabel.textContent = 'Output';
+        
+        const outputDot = document.createElement('div');
+        outputDot.className = 'anvil-node-port-dot';
+        
+        outputPort.appendChild(outputLabel);
+        outputPort.appendChild(outputDot);
+        outputPorts.appendChild(outputPort);
+        
+        content.appendChild(inputPorts);
+        content.appendChild(outputPorts);
+        
+        node.appendChild(header);
+        node.appendChild(content);
+        
+        // Make node draggable
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        
+        node.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          if (e.target.classList.contains('anvil-node-port-dot')) return;
+          
+          isDragging = true;
+          startX = e.clientX - node.offsetLeft;
+          startY = e.clientY - node.offsetTop;
+          
+          // Make node appear above others
+          node.style.zIndex = '10';
+          
+          // Select this node
+          document.querySelectorAll('.anvil-node').forEach(n => {
+            n.classList.remove('selected');
+          });
+          node.classList.add('selected');
+          
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+        
+        const onMouseMove = (e) => {
+          if (!isDragging) return;
+          
+          node.style.left = (e.clientX - startX) + 'px';
+          node.style.top = (e.clientY - startY) + 'px';
+        };
+        
+        const onMouseUp = () => {
+          isDragging = false;
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          
+          // Reset z-index to normal
+          setTimeout(() => {
+            node.style.zIndex = '5';
+          }, 100);
+        };
+        
+        // Add to canvas
+        blueprintCanvas.appendChild(node);
+        return node;
+      }
     </script>
   </body>
 </html>

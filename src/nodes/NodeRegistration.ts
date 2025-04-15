@@ -1,5 +1,6 @@
 import { BlueprintRegistry } from '../services/BlueprintRegistry';
 import { BuiltInNodes } from './BuiltInNodes';
+import { APINodes } from './APINodes';
 
 /**
  * Register all built-in nodes with the BlueprintRegistry
@@ -12,5 +13,10 @@ export const registerBuiltInNodes = (): void => {
     BlueprintRegistry.registerNode(node);
   });
   
-  console.log(`Registered ${BuiltInNodes.length} built-in nodes`);
+  // Register API nodes
+  APINodes.forEach(node => {
+    BlueprintRegistry.registerNode(node);
+  });
+  
+  console.log(`Registered ${BuiltInNodes.length} built-in nodes and ${APINodes.length} API nodes`);
 };

@@ -1,15 +1,33 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { Stack, IStackStyles, IStackTokens } from '@fluentui/react';
+import { Stack, IStackStyles, IStackTokens, mergeStyles } from '@fluentui/react';
 import { ProjectContext } from '../../contexts/ProjectContext';
 import { UIContext } from '../../contexts/UIContext';
 import { BlueprintRegistry } from '../../services/BlueprintRegistry';
 import { NodeLibrary } from './NodeLibrary';
+
+// Dark theme colors
+const colors = {
+  background: '#121212',
+  surface: '#1e1e1e',
+  border: '#333333',
+  accent: '#6200EE',
+  accentLight: '#BB86FC',
+  text: '#FFFFFF',
+  textSecondary: '#AAAAAA',
+  nodeBg: '#252525',
+  nodeHeaderBg: '#333333',
+  nodeSelected: '#4B4BFF',
+  portDot: '#BB86FC',
+  connection: '#BB86FC',
+  grid: '#222222',
+};
 
 // Styles
 const stackStyles: IStackStyles = {
   root: {
     height: '100%',
     overflow: 'hidden',
+    backgroundColor: colors.background,
   },
 };
 
@@ -23,7 +41,8 @@ const contentStyles: IStackStyles = {
 const sidebarStyles: IStackStyles = {
   root: {
     width: 300,
-    borderRight: '1px solid #555555',
+    borderRight: `1px solid ${colors.border}`,
+    backgroundColor: colors.surface,
   },
 };
 
@@ -32,8 +51,113 @@ const canvasContainerStyles: IStackStyles = {
     flex: 1,
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: colors.background,
   },
 };
+
+// CSS Classes
+const blueprintEditorClass = mergeStyles({
+  height: '100%',
+  width: '100%',
+  position: 'relative',
+  backgroundSize: '25px 25px',
+  backgroundImage: `
+    linear-gradient(to right, ${colors.grid} 1px, transparent 1px),
+    linear-gradient(to bottom, ${colors.grid} 1px, transparent 1px)
+  `,
+  backgroundColor: colors.background,
+});
+
+const nodeClass = mergeStyles({
+  position: 'absolute',
+  minWidth: '180px',
+  backgroundColor: colors.nodeBg,
+  borderRadius: '4px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+  border: `1px solid ${colors.border}`,
+  color: colors.text,
+  transition: 'all 0.1s ease-out',
+  cursor: 'move',
+  userSelect: 'none',
+  '&.selected': {
+    border: `1px solid ${colors.nodeSelected}`,
+    boxShadow: `0 0 0 1px ${colors.nodeSelected}, 0 3px 10px rgba(0,0,0,0.4)`,
+  },
+  '&:hover': {
+    boxShadow: '0 5px 15px rgba(0,0,0,0.35)',
+  }
+});
+
+const nodeHeaderClass = mergeStyles({
+  padding: '8px 12px',
+  backgroundColor: colors.nodeHeaderBg,
+  borderRadius: '4px 4px 0 0',
+  borderBottom: `1px solid ${colors.border}`,
+  fontWeight: 500,
+  fontSize: '14px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+});
+
+const nodeContentClass = mergeStyles({
+  padding: '12px 0',
+});
+
+const nodePortsClass = mergeStyles({
+  padding: '4px 0',
+});
+
+const nodePortClass = mergeStyles({
+  padding: '4px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '13px',
+  margin: '2px 0',
+  '&:hover': {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  }
+});
+
+const nodeInputPortClass = mergeStyles([
+  nodePortClass,
+  {
+    justifyContent: 'flex-start',
+  }
+]);
+
+const nodeOutputPortClass = mergeStyles([
+  nodePortClass,
+  {
+    justifyContent: 'flex-end',
+  }
+]);
+
+const portDotClass = mergeStyles({
+  width: '10px',
+  height: '10px',
+  borderRadius: '50%',
+  backgroundColor: colors.portDot,
+  margin: '0 6px',
+  cursor: 'crosshair',
+});
+
+const connectionLayerClass = mergeStyles({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  pointerEvents: 'none',
+  zIndex: 1,
+});
+
+const nodeLayerClass = mergeStyles({
+  position: 'relative',
+  zIndex: 2,
+  height: '100%',
+  width: '100%',
+});
 
 // Tokens
 const stackTokens: IStackTokens = {
@@ -345,44 +469,44 @@ export const BlueprintEditor: React.FC = () => {
       <div
         key={node.id}
         data-node-id={node.id}
-        className={`anvil-node ${isSelected ? 'selected' : ''}`}
+        className={`${nodeClass} ${isSelected ? 'selected' : ''}`}
         style={{
           left: `${node.position.x}px`,
           top: `${node.position.y}px`,
         }}
         onClick={(e) => handleNodeClick(e, node.id)}
       >
-        <div className="anvil-node-header">
+        <div className={nodeHeaderClass}>
           {node.type.split('-').pop()}
         </div>
-        <div className="anvil-node-content">
+        <div className={nodeContentClass}>
           {/* Input ports */}
-          <div className="anvil-node-input-ports">
+          <div className={nodePortsClass}>
             {Object.entries(node.inputs).map(([portId, value]: [string, any]) => (
               <div 
                 key={`input-${portId}`} 
-                className="anvil-node-port anvil-node-port-input"
+                className={nodeInputPortClass}
                 data-node-id={node.id}
                 data-port-id={portId}
               >
-                <div className="anvil-node-port-dot"></div>
+                <div className={portDotClass}></div>
                 <span>{portId}</span>
               </div>
             ))}
           </div>
           
           {/* Output ports */}
-          <div className="anvil-node-output-ports">
+          <div className={nodePortsClass}>
             {Object.entries(node.outputs).map(([portId, value]: [string, any]) => (
               <div 
                 key={`output-${portId}`} 
-                className="anvil-node-port anvil-node-port-output"
+                className={nodeOutputPortClass}
                 data-node-id={node.id}
                 data-port-id={portId}
                 onMouseDown={(e) => handlePortMouseDown(e, node.id, portId, false)}
               >
                 <span>{portId}</span>
-                <div className="anvil-node-port-dot"></div>
+                <div className={portDotClass}></div>
               </div>
             ))}
           </div>
@@ -401,10 +525,9 @@ export const BlueprintEditor: React.FC = () => {
       <path
         key={connection.id}
         d={path}
-        stroke="#FFFFFF"
+        stroke={colors.connection}
         strokeWidth="2"
         fill="none"
-        className="anvil-connection"
       />
     );
   };
@@ -418,7 +541,7 @@ export const BlueprintEditor: React.FC = () => {
         <Stack.Item grow styles={canvasContainerStyles}>
           <div
             ref={canvasRef}
-            className="anvil-blueprint-editor"
+            className={blueprintEditorClass}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -432,16 +555,7 @@ export const BlueprintEditor: React.FC = () => {
             {/* Connection SVG Layer */}
             <svg 
               ref={connectionLayerRef} 
-              className="anvil-connection-layer"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}
+              className={connectionLayerClass}
             >
               {/* Render existing connections */}
               {currentBlueprint?.connections.map(connection => renderConnection(connection))}
@@ -450,35 +564,34 @@ export const BlueprintEditor: React.FC = () => {
               {isDraggingConnection && connectionStartPort && (
                 <path
                   d={`M ${connectionStartPort.position.x} ${connectionStartPort.position.y} C ${connectionStartPort.position.x + 100} ${connectionStartPort.position.y}, ${connectionEndPosition.x - 100} ${connectionEndPosition.y}, ${connectionEndPosition.x} ${connectionEndPosition.y}`}
-                  stroke="#FFFFFF"
+                  stroke={colors.connection}
                   strokeWidth="2"
                   strokeDasharray="5,5"
                   fill="none"
-                  className="anvil-connection-preview"
                 />
               )}
             </svg>
             
             {/* Node Layer */}
-            <div className="anvil-node-layer" style={{ position: 'relative', zIndex: 2 }}>
+            <div className={nodeLayerClass}>
               {currentBlueprint?.nodes.map(node => renderNode(node))}
             </div>
             
             {/* Drag placeholder */}
             {isDraggingOver && (
               <div
-                className="anvil-node"
+                className={nodeClass}
                 style={{
                   position: 'absolute',
                   left: `${dragPosition.x}px`,
                   top: `${dragPosition.y}px`,
                   opacity: 0.5,
-                  width: '150px',
+                  width: '180px',
                   height: 'auto',
                   zIndex: 3
                 }}
               >
-                <div className="anvil-node-header">
+                <div className={nodeHeaderClass}>
                   New Node
                 </div>
               </div>
