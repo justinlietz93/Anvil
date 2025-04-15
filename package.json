@@ -33,7 +33,7 @@
     "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
     "@typescript-eslint/parser": "^6.13.2",
-    "@vercel/webpack-asset-relocator-loader": "^1.7.4",
+    "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "assert": "^2.1.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",

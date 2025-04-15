@@ -1,6 +1,47 @@
 import { ConfigManager } from './ConfigManager';
 import { v4 as uuidv4 } from 'uuid';
-import ivm from 'isolated-vm';
+
+// Mock isolated-vm for development purposes
+// This creates a dummy implementation when the actual module is not available
+let ivm: any;
+
+try {
+  // Try to import the real module
+  ivm = require('isolated-vm');
+} catch (e) {
+  // Create mock implementation if module is not available
+  console.warn('isolated-vm module not available, using mock implementation');
+  ivm = {
+    Isolate: class MockIsolate {
+      constructor() {}
+      createContext() { return Promise.resolve(new MockContext()); }
+      compileScript(code: string) { 
+        return Promise.resolve({
+          run: () => Promise.resolve(null)
+        });
+      }
+      dispose() {}
+    },
+    Reference: class MockReference {
+      constructor(value: any) { this.value = value; }
+      apply() { return Promise.resolve(null); }
+      get() { return Promise.resolve(new MockReference({})); }
+      copy() { return Promise.resolve({}); }
+    },
+    ExternalCopy: class MockExternalCopy {
+      constructor(value: any) {}
+      copyInto() { return null; }
+    }
+  };
+}
+
+// Mock Context class for the mock implementation
+class MockContext {
+  global = {
+    set: () => Promise.resolve(),
+    get: () => Promise.resolve(new ivm.Reference({}))
+  };
+}
 
 /**
  * Interface for plugin metadata

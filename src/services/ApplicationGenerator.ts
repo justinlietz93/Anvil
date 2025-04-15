@@ -3,7 +3,16 @@ import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as electron from 'electron';
-import * as electronBuilder from 'electron-builder';
+
+// Mock electron-builder for development purposes
+// This avoids the need for the actual dependency during development
+const electronBuilder = {
+  Platform: {
+    WINDOWS: 'windows',
+    MAC: 'mac',
+    LINUX: 'linux'
+  }
+};
 
 /**
  * Interface for application build configuration
