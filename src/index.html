@@ -2,10 +2,543 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
     <title>Anvil - No-Code Application Builder</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Menu bar styles */
+      .menu-bar {
+        background-color: #1e1e1e;
+        color: white;
+        display: flex;
+        padding: 0;
+        margin: 0;
+      }
+      
+      .menu-bar .menu-item {
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      
+      .menu-bar .menu-item:hover {
+        background-color: #333;
+      }
+      
+      /* Header styles */
+      .app-header {
+        background-color: #007ACC;
+        color: white;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .app-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: normal;
+      }
+      
+      .app-actions button {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        padding: 6px 14px;
+        margin-left: 10px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      
+      .app-actions button:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+      
+      /* Main content area */
+      .app-content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+      
+      /* Components panel */
+      .components-panel {
+        width: 225px;
+        background-color: #f0f0f0;
+        border-right: 1px solid #ddd;
+        overflow-y: auto;
+      }
+      
+      .panel-header {
+        background-color: #e0e0e0;
+        padding: 10px 15px;
+        font-weight: 500;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      .component-list {
+        padding: 0;
+      }
+      
+      .component-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        cursor: grab;
+        user-select: none;
+        background-color: white;
+      }
+      
+      .component-item:hover {
+        background-color: #f5f5f5;
+      }
+      
+      /* Workspace area */
+      .workspace-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      .workspace-header {
+        background-color: #f0f0f0;
+        padding: 10px 15px;
+        font-weight: 500;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      .workspace {
+        flex: 1;
+        padding: 20px;
+        overflow: auto;
+        position: relative;
+        background-color: white;
+      }
+      
+      .workspace-content {
+        position: relative;
+        min-height: 100%;
+        border: 1px dashed #ccc;
+        padding: 10px;
+      }
+      
+      .workspace-help {
+        color: #888;
+        padding: 10px 0;
+      }
+      
+      /* Component instances in workspace */
+      .ui-component {
+        position: absolute;
+        z-index: 10;
+        cursor: move;
+      }
+      
+      .ui-button {
+        background-color: #007ACC;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 2px;
+      }
+      
+      .ui-input {
+        display: inline-block;
+        border: 1px solid #007ACC;
+        padding: 5px;
+        min-width: 100px;
+        border-radius: 2px;
+      }
+      
+      .ui-label {
+        background-color: #007ACC;
+        color: white;
+        padding: 6px 14px;
+        display: inline-block;
+        border-radius: 2px;
+      }
+      
+      /* Status bar */
+      .status-bar {
+        background-color: #f0f0f0;
+        padding: 4px 10px;
+        font-size: 12px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .selected-component {
+        outline: 2px solid #007ACC;
+        outline-offset: 2px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div class="menu-bar">
+      <div class="menu-item">File</div>
+      <div class="menu-item">Edit</div>
+      <div class="menu-item">View</div>
+      <div class="menu-item">Window</div>
+      <div class="menu-item">Help</div>
+    </div>
+    
+    <div class="app-header">
+      <h1 class="app-title">Anvil - No-Code Application Builder</h1>
+      <div class="app-actions">
+        <button id="new-project">New Project</button>
+        <button id="open-project">Open Project</button>
+        <button id="save-project">Save Project</button>
+      </div>
+    </div>
+    
+    <div class="app-content">
+      <div class="components-panel">
+        <div class="panel-header">Components</div>
+        <div class="component-list">
+          <div class="component-item" draggable="true" data-component-type="button">Button</div>
+          <div class="component-item" draggable="true" data-component-type="input">Text Input</div>
+          <div class="component-item" draggable="true" data-component-type="label">Label</div>
+          <div class="component-item" draggable="true" data-component-type="container">Container</div>
+          <div class="component-item" draggable="true" data-component-type="image">Image</div>
+          <div class="component-item" draggable="true" data-component-type="dropdown">Dropdown</div>
+          <div class="component-item" draggable="true" data-component-type="checkbox">Checkbox</div>
+        </div>
+      </div>
+      
+      <div class="workspace-container">
+        <div class="workspace-header">Workspace</div>
+        <div class="workspace">
+          <div class="workspace-help">Drag components from the sidebar to start building your application.</div>
+          <div id="workspace-content" class="workspace-content"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="status-bar">
+      Anvil Platform v1.0.0 - © 2025 Anvil
+    </div>
+    
+    <script>
+      // Component counter to generate unique IDs
+      let componentCounter = 0;
+      
+      // Track the currently selected component
+      let selectedComponent = null;
+      
+      // Component state storage - would be used for generating the application later
+      const appState = {
+        components: []
+      };
+      
+      // Make components draggable from the sidebar
+      document.querySelectorAll('.component-item').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('component-type', item.getAttribute('data-component-type'));
+          e.dataTransfer.effectAllowed = 'copy';
+        });
+      });
+      
+      // Make workspace droppable
+      const workspace = document.getElementById('workspace-content');
+      
+      workspace.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+      
+      // Handle component drops
+      workspace.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const componentType = e.dataTransfer.getData('component-type');
+        
+        // Check if this is a new drop from sidebar or a repositioning of existing component
+        const isNewComponent = !e.dataTransfer.getData('component-id');
+        
+        if (isNewComponent) {
+          createComponent(
+            componentType, 
+            e.clientX - workspace.getBoundingClientRect().left,
+            e.clientY - workspace.getBoundingClientRect().top
+          );
+        }
+      });
+      
+      // Function to create a new component in the workspace
+      function createComponent(type, x, y) {
+        const id = `component-${type}-${componentCounter++}`;
+        let element;
+        
+        switch(type) {
+          case 'button':
+            element = document.createElement('button');
+            element.className = 'ui-component ui-button';
+            element.textContent = 'Button';
+            break;
+            
+          case 'input':
+            element = document.createElement('div');
+            element.className = 'ui-component ui-input';
+            element.textContent = 'Input';
+            break;
+            
+          case 'label':
+            element = document.createElement('div');
+            element.className = 'ui-component ui-label';
+            element.textContent = 'Label';
+            break;
+            
+          case 'container':
+            element = document.createElement('div');
+            element.className = 'ui-component';
+            element.style.width = '120px';
+            element.style.height = '80px';
+            element.style.border = '1px solid #007ACC';
+            element.style.backgroundColor = '#f0f0f0';
+            break;
+            
+          case 'image':
+            element = document.createElement('div');
+            element.className = 'ui-component';
+            element.style.width = '120px';
+            element.style.height = '80px';
+            element.style.backgroundColor = '#ccc';
+            element.textContent = 'Image';
+            element.style.display = 'flex';
+            element.style.justifyContent = 'center';
+            element.style.alignItems = 'center';
+            break;
+            
+          case 'dropdown':
+            element = document.createElement('select');
+            element.className = 'ui-component';
+            const opt1 = document.createElement('option');
+            opt1.text = 'Option 1';
+            const opt2 = document.createElement('option');
+            opt2.text = 'Option 2';
+            element.add(opt1);
+            element.add(opt2);
+            break;
+            
+          case 'checkbox':
+            const cbContainer = document.createElement('div');
+            cbContainer.className = 'ui-component';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = id;
+            
+            const label = document.createElement('label');
+            label.htmlFor = id;
+            label.textContent = 'Checkbox';
+            
+            cbContainer.appendChild(checkbox);
+            cbContainer.appendChild(label);
+            element = cbContainer;
+            break;
+            
+          default:
+            element = document.createElement('div');
+            element.className = 'ui-component';
+            element.textContent = type;
+        }
+        
+        // Set common properties
+        element.id = id;
+        element.setAttribute('data-component-type', type);
+        element.style.position = 'absolute';
+        element.style.left = `${x}px`;
+        element.style.top = `${y}px`;
+        
+        // Store component data
+        appState.components.push({
+          id,
+          type,
+          x,
+          y,
+          properties: {}
+        });
+        
+        // Make the component draggable within the workspace
+        makeComponentDraggable(element);
+        
+        // Handle selection
+        element.addEventListener('mousedown', (e) => {
+          // Don't prevent default for checkboxes and form elements
+          if (type !== 'checkbox' && type !== 'dropdown') {
+            e.preventDefault();
+          }
+          
+          selectComponent(element);
+        });
+        
+        workspace.appendChild(element);
+        
+        // Update info text
+        const helpText = document.querySelector('.workspace-help');
+        if (helpText) {
+          helpText.style.display = 'none';
+        }
+        
+        return element;
+      }
+      
+      // Make a component draggable within the workspace
+      function makeComponentDraggable(element) {
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        const onMouseDown = (e) => {
+          // Don't initialize drag for checkboxes, selects, etc.
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+            return;
+          }
+          
+          isDragging = true;
+          
+          // Calculate the offset from the pointer to the element
+          const rect = element.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          
+          // Prevent default to avoid text selection during drag
+          e.preventDefault();
+          
+          // Add global event listeners
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        };
+        
+        const onMouseMove = (e) => {
+          if (!isDragging) return;
+          
+          const workspaceRect = workspace.getBoundingClientRect();
+          const x = e.clientX - workspaceRect.left - offsetX;
+          const y = e.clientY - workspaceRect.top - offsetY;
+          
+          // Apply the transform
+          element.style.left = `${x}px`;
+          element.style.top = `${y}px`;
+          
+          // Update stored position
+          const componentData = appState.components.find(c => c.id === element.id);
+          if (componentData) {
+            componentData.x = x;
+            componentData.y = y;
+          }
+        };
+        
+        const onMouseUp = () => {
+          isDragging = false;
+          
+          // Remove global event listeners
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        };
+        
+        element.addEventListener('mousedown', onMouseDown);
+        
+        // Make component selectable with click
+        element.addEventListener('click', (e) => {
+          // Allow checkbox clicking etc. to work
+          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+            e.stopPropagation();
+          }
+          selectComponent(element);
+        });
+      }
+      
+      // Select a component
+      function selectComponent(component) {
+        // Remove selection from previously selected component
+        if (selectedComponent && selectedComponent !== component) {
+          selectedComponent.classList.remove('selected-component');
+        }
+        
+        // Set new selection
+        selectedComponent = component;
+        component.classList.add('selected-component');
+      }
+      
+      // Handle workspace click (deselection)
+      workspace.addEventListener('click', (e) => {
+        if (e.target === workspace || e.target === document.getElementById('workspace-content')) {
+          if (selectedComponent) {
+            selectedComponent.classList.remove('selected-component');
+            selectedComponent = null;
+          }
+        }
+      });
+      
+      // Handle button clicks
+      document.getElementById('new-project').addEventListener('click', () => {
+        if (confirm('Start a new project? This will clear your current workspace.')) {
+          // Clear workspace
+          workspace.innerHTML = '';
+          appState.components = [];
+          
+          // Reset component counter
+          componentCounter = 0;
+          
+          // Restore help text
+          const helpText = document.createElement('div');
+          helpText.className = 'workspace-help';
+          helpText.textContent = 'Drag components from the sidebar to start building your application.';
+          workspace.appendChild(helpText);
+        }
+      });
+      
+      document.getElementById('open-project').addEventListener('click', () => {
+        alert('Open Project functionality will be available in a future update.');
+      });
+      
+      document.getElementById('save-project').addEventListener('click', () => {
+        if (appState.components.length === 0) {
+          alert('No components to save. Add components to your workspace first.');
+          return;
+        }
+        
+        // In a real implementation, this would save to a file
+        alert(`Project saved with ${appState.components.length} components.`);
+        console.log('Project state:', JSON.stringify(appState, null, 2));
+      });
+      
+      // Add keyboard shortcut to delete selected component
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' && selectedComponent) {
+          // Remove from DOM
+          selectedComponent.remove();
+          
+          // Remove from state
+          const index = appState.components.findIndex(c => c.id === selectedComponent.id);
+          if (index !== -1) {
+            appState.components.splice(index, 1);
+          }
+          
+          // Clear selection
+          selectedComponent = null;
+          
+          // Show help text if no components left
+          if (appState.components.length === 0) {
+            const helpText = document.createElement('div');
+            helpText.className = 'workspace-help';
+            helpText.textContent = 'Drag components from the sidebar to start building your application.';
+            workspace.appendChild(helpText);
+          }
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,9 +1,13 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const path = require('path');
 
 module.exports = {
   packagerConfig: {
     asar: true,
+    extraResource: [
+      'src'
+    ]
   },
   rebuildConfig: {},
   makers: [
@@ -13,7 +17,7 @@ module.exports = {
     },
     {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      platforms: ['darwin', 'win32', 'linux'],
     },
     {
       name: '@electron-forge/maker-deb',
@@ -28,6 +32,29 @@ module.exports = {
     {
       name: '@electron-forge/plugin-auto-unpack-natives',
       config: {},
+    },
+    {
+      name: '@electron-forge/plugin-webpack',
+      config: {
+        mainConfig: path.join(__dirname, 'webpack.main.config.js'),
+        renderer: {
+          config: path.join(__dirname, 'webpack.renderer.config.js'),
+          entryPoints: [
+            {
+              html: path.join(__dirname, 'src/index.html'),
+              js: path.join(__dirname, 'src/index.tsx'),
+              name: 'main_window',
+              preload: {
+                js: path.join(__dirname, 'src/preload.js'),
+              },
+            },
+          ],
+        },
+        devContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' * 'unsafe-eval'",
+        devServer: {
+          liveReload: true,
+        },
+      },
     },
     // Fuses are used to enable/disable various Electron functionality
     // at package time, before code signing the application

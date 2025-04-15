@@ -6,16 +6,6 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-// Define fallback constants for when webpack constants aren't available
-// These are normally provided by electron-forge's webpack plugin
-if (typeof MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY === 'undefined') {
-  global.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY = path.join(__dirname, 'preload.js');
-}
-
-if (typeof MAIN_WINDOW_WEBPACK_ENTRY === 'undefined') {
-  global.MAIN_WINDOW_WEBPACK_ENTRY = `file://${path.join(__dirname, 'index.html')}`;
-}
-
 let mainWindow;
 
 const createWindow = () => {

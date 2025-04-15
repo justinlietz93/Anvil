@@ -52,12 +52,19 @@ export const BlueprintEditor: React.FC = () => {
   
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
+  const connectionLayerRef = useRef<SVGSVGElement>(null);
   
   // State
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [activeBlueprint, setActiveBlueprint] = useState<string | null>(null);
+  const [isDraggingConnection, setIsDraggingConnection] = useState(false);
+  const [connectionStartPort, setConnectionStartPort] = useState<any>(null);
+  const [connectionEndPosition, setConnectionEndPosition] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [nodeDomElements, setNodeDomElements] = useState<Map<string, HTMLElement>>(new Map());
   
   // Get current blueprint
   const currentBlueprint = React.useMemo(() => {
@@ -76,6 +83,23 @@ export const BlueprintEditor: React.FC = () => {
       setActiveBlueprint(newBlueprint.id);
     }
   }, [project, activeBlueprint, updateProject]);
+
+  // Track node DOM elements for connection calculation
+  useEffect(() => {
+    if (!canvasRef.current || !currentBlueprint) return;
+    
+    const newNodeElements = new Map<string, HTMLElement>();
+    
+    // Find all node elements in the DOM
+    currentBlueprint.nodes.forEach(node => {
+      const element = canvasRef.current?.querySelector(`[data-node-id="${node.id}"]`) as HTMLElement;
+      if (element) {
+        newNodeElements.set(node.id, element);
+      }
+    });
+    
+    setNodeDomElements(newNodeElements);
+  }, [currentBlueprint?.nodes]);
   
   // Handle drag over
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -162,6 +186,156 @@ export const BlueprintEditor: React.FC = () => {
       setSelectedNodeIds([nodeId]);
     }
   };
+
+  // Handle port mouse down (start connection)
+  const handlePortMouseDown = (event: React.MouseEvent<HTMLDivElement>, nodeId: string, portId: string, isInput: boolean) => {
+    // Don't start connection from input ports
+    if (isInput) return;
+    
+    event.stopPropagation();
+    setIsDraggingConnection(true);
+    
+    const node = currentBlueprint?.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    // Get port position relative to canvas
+    const portElement = event.currentTarget;
+    const portRect = portElement.getBoundingClientRect();
+    const canvasRect = canvasRef.current!.getBoundingClientRect();
+    
+    const portPosition = {
+      x: (portRect.left + portRect.width / 2) - canvasRect.left,
+      y: (portRect.top + portRect.height / 2) - canvasRect.top
+    };
+    
+    setConnectionStartPort({
+      nodeId,
+      portId,
+      position: portPosition
+    });
+    setConnectionEndPosition(portPosition);
+    
+    // Add event listeners
+    document.addEventListener('mousemove', handleConnectionDrag);
+    document.addEventListener('mouseup', handleConnectionDrop);
+  };
+  
+  // Handle connection dragging
+  const handleConnectionDrag = (event: MouseEvent) => {
+    if (!isDraggingConnection || !canvasRef.current) return;
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - canvasRect.left;
+    const y = event.clientY - canvasRect.top;
+    
+    setConnectionEndPosition({ x, y });
+  };
+  
+  // Handle connection drop
+  const handleConnectionDrop = (event: MouseEvent) => {
+    document.removeEventListener('mousemove', handleConnectionDrag);
+    document.removeEventListener('mouseup', handleConnectionDrop);
+    
+    if (!isDraggingConnection || !connectionStartPort || !canvasRef.current || !currentBlueprint) {
+      setIsDraggingConnection(false);
+      return;
+    }
+    
+    // Check if dropped on an input port
+    const portElement = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement;
+    const isInputPort = portElement?.classList.contains('anvil-node-port-input');
+    
+    if (isInputPort) {
+      const targetNodeId = portElement.getAttribute('data-node-id');
+      const targetPortId = portElement.getAttribute('data-port-id');
+      
+      if (targetNodeId && targetPortId) {
+        // Ensure we don't connect to same node
+        if (targetNodeId !== connectionStartPort.nodeId) {
+          // Create new connection
+          const newConnection = {
+            id: `conn-${Date.now()}`,
+            sourceNodeId: connectionStartPort.nodeId,
+            sourcePortId: connectionStartPort.portId,
+            targetNodeId,
+            targetPortId
+          };
+          
+          // Update blueprint
+          const updatedBlueprint = {
+            ...currentBlueprint,
+            connections: [...currentBlueprint.connections, newConnection]
+          };
+          
+          // Update project
+          if (project) {
+            const updatedBlueprints = project.blueprints.map(bp => 
+              bp.id === currentBlueprint.id ? updatedBlueprint : bp
+            );
+            
+            updateProject({ blueprints: updatedBlueprints });
+          }
+        }
+      }
+    }
+    
+    setIsDraggingConnection(false);
+  };
+  
+  // Calculate bezier path for connection
+  const calculateConnectionPath = (connection: any) => {
+    if (!currentBlueprint) return '';
+    
+    const sourceNode = currentBlueprint.nodes.find(n => n.id === connection.sourceNodeId);
+    const targetNode = currentBlueprint.nodes.find(n => n.id === connection.targetNodeId);
+    
+    if (!sourceNode || !targetNode) return '';
+    
+    const sourceElement = nodeDomElements.get(sourceNode.id);
+    const targetElement = nodeDomElements.get(targetNode.id);
+    
+    if (!sourceElement || !targetElement) return '';
+    
+    const sourcePortElement = sourceElement.querySelector(`[data-port-id="${connection.sourcePortId}"]`) as HTMLElement;
+    const targetPortElement = targetElement.querySelector(`[data-port-id="${connection.targetPortId}"]`) as HTMLElement;
+    
+    if (!sourcePortElement || !targetPortElement) return '';
+    
+    const sourceRect = sourcePortElement.getBoundingClientRect();
+    const targetRect = targetPortElement.getBoundingClientRect();
+    const canvasRect = canvasRef.current!.getBoundingClientRect();
+    
+    const sourceX = (sourceRect.left + sourceRect.width / 2) - canvasRect.left;
+    const sourceY = (sourceRect.top + sourceRect.height / 2) - canvasRect.top;
+    const targetX = (targetRect.left + targetRect.width / 2) - canvasRect.left;
+    const targetY = (targetRect.top + targetRect.height / 2) - canvasRect.top;
+    
+    // Create a bezier curve
+    const controlPointOffset = Math.abs(targetX - sourceX) * 0.5;
+    
+    return `M ${sourceX} ${sourceY} C ${sourceX + controlPointOffset} ${sourceY}, ${targetX - controlPointOffset} ${targetY}, ${targetX} ${targetY}`;
+  };
+  
+  // Handle canvas zoom
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    
+    const delta = event.deltaY > 0 ? -0.05 : 0.05;
+    const newScale = Math.min(Math.max(scale + delta, 0.1), 2); // Limit scale between 0.1 and 2
+    
+    // Calculate zoom around mouse position
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    const newPan = {
+      x: pan.x - ((mouseX / scale) - (mouseX / newScale)) * newScale,
+      y: pan.y - ((mouseY / scale) - (mouseY / newScale)) * newScale
+    };
+    
+    setScale(newScale);
+    setPan(newPan);
+  };
   
   // Render node
   const renderNode = (node: any) => {
@@ -170,6 +344,7 @@ export const BlueprintEditor: React.FC = () => {
     return (
       <div
         key={node.id}
+        data-node-id={node.id}
         className={`anvil-node ${isSelected ? 'selected' : ''}`}
         style={{
           left: `${node.position.x}px`,
@@ -182,20 +357,35 @@ export const BlueprintEditor: React.FC = () => {
         </div>
         <div className="anvil-node-content">
           {/* Input ports */}
-          {Object.entries(node.inputs).map(([portId, value]: [string, any]) => (
-            <div key={`input-${portId}`} className="anvil-node-port">
-              <div className="anvil-node-port-dot"></div>
-              <span style={{ color: 'white' }}>{portId}</span>
-            </div>
-          ))}
+          <div className="anvil-node-input-ports">
+            {Object.entries(node.inputs).map(([portId, value]: [string, any]) => (
+              <div 
+                key={`input-${portId}`} 
+                className="anvil-node-port anvil-node-port-input"
+                data-node-id={node.id}
+                data-port-id={portId}
+              >
+                <div className="anvil-node-port-dot"></div>
+                <span>{portId}</span>
+              </div>
+            ))}
+          </div>
           
           {/* Output ports */}
-          {Object.entries(node.outputs).map(([portId, value]: [string, any]) => (
-            <div key={`output-${portId}`} className="anvil-node-port">
-              <span style={{ color: 'white' }}>{portId}</span>
-              <div className="anvil-node-port-dot"></div>
-            </div>
-          ))}
+          <div className="anvil-node-output-ports">
+            {Object.entries(node.outputs).map(([portId, value]: [string, any]) => (
+              <div 
+                key={`output-${portId}`} 
+                className="anvil-node-port anvil-node-port-output"
+                data-node-id={node.id}
+                data-port-id={portId}
+                onMouseDown={(e) => handlePortMouseDown(e, node.id, portId, false)}
+              >
+                <span>{portId}</span>
+                <div className="anvil-node-port-dot"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -203,11 +393,19 @@ export const BlueprintEditor: React.FC = () => {
   
   // Render connection
   const renderConnection = (connection: any) => {
-    // This would be implemented with SVG path drawing
+    const path = calculateConnectionPath(connection);
+    
+    if (!path) return null;
+    
     return (
-      <div key={connection.id} className="anvil-connection">
-        {/* Connection visualization would go here */}
-      </div>
+      <path
+        key={connection.id}
+        d={path}
+        stroke="#FFFFFF"
+        strokeWidth="2"
+        fill="none"
+        className="anvil-connection"
+      />
     );
   };
   
@@ -225,12 +423,46 @@ export const BlueprintEditor: React.FC = () => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={handleCanvasClick}
+            onWheel={handleWheel}
+            style={{
+              transform: `scale(${scale}) translate(${pan.x}px, ${pan.y}px)`,
+              transformOrigin: '0 0',
+            }}
           >
-            {/* Render nodes */}
-            {currentBlueprint?.nodes.map(node => renderNode(node))}
+            {/* Connection SVG Layer */}
+            <svg 
+              ref={connectionLayerRef} 
+              className="anvil-connection-layer"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 1
+              }}
+            >
+              {/* Render existing connections */}
+              {currentBlueprint?.connections.map(connection => renderConnection(connection))}
+              
+              {/* Render connection being dragged */}
+              {isDraggingConnection && connectionStartPort && (
+                <path
+                  d={`M ${connectionStartPort.position.x} ${connectionStartPort.position.y} C ${connectionStartPort.position.x + 100} ${connectionStartPort.position.y}, ${connectionEndPosition.x - 100} ${connectionEndPosition.y}, ${connectionEndPosition.x} ${connectionEndPosition.y}`}
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                  fill="none"
+                  className="anvil-connection-preview"
+                />
+              )}
+            </svg>
             
-            {/* Render connections */}
-            {currentBlueprint?.connections.map(connection => renderConnection(connection))}
+            {/* Node Layer */}
+            <div className="anvil-node-layer" style={{ position: 'relative', zIndex: 2 }}>
+              {currentBlueprint?.nodes.map(node => renderNode(node))}
+            </div>
             
             {/* Drag placeholder */}
             {isDraggingOver && (
@@ -242,7 +474,8 @@ export const BlueprintEditor: React.FC = () => {
                   top: `${dragPosition.y}px`,
                   opacity: 0.5,
                   width: '150px',
-                  height: '100px',
+                  height: 'auto',
+                  zIndex: 3
                 }}
               >
                 <div className="anvil-node-header">
