@@ -3,9 +3,7 @@
   <img src="src\assets\Anvil-logo.png" alt="Anvil Logo" width="500"/>
 </p>
 
-<h3 align="center">No code / Low code Application Builder</h3>
-
-## Project Overview
+## No code / Low code Application Builder
 
 The Anvil Desktop Platform is a comprehensive no-code application builder that enables users to create professional desktop applications without writing code. Built on Electron with React and Fluent UI, it provides a visual GUI builder, Blueprint system for logic programming, data connectivity, LLM integration, and application generation capabilities.
 
