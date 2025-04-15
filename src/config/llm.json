@@ -1,0 +1,19 @@
+{
+  "providers": {
+    "openai": {
+      "defaultModel": "gpt-4",
+      "apiEndpoint": "https://api.openai.com/v1"
+    },
+    "anthropic": {
+      "defaultModel": "claude-3-opus",
+      "apiEndpoint": "https://api.anthropic.com"
+    },
+    "google": {
+      "defaultModel": "gemini-pro",
+      "apiEndpoint": "https://generativelanguage.googleapis.com"
+    },
+    "azure": {
+      "defaultModel": "gpt-4"
+    }
+  }
+}

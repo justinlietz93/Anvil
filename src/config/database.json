@@ -1,0 +1,22 @@
+{
+  "connections": {
+    "sqlite": {
+      "defaultPath": "./data/database.sqlite"
+    },
+    "postgresql": {
+      "defaultHost": "localhost",
+      "defaultPort": 5432
+    },
+    "mysql": {
+      "defaultHost": "localhost",
+      "defaultPort": 3306
+    },
+    "sqlserver": {
+      "defaultHost": "localhost",
+      "defaultPort": 1433
+    },
+    "mongodb": {
+      "defaultConnectionString": "mongodb://localhost:27017"
+    }
+  }
+}

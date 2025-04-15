@@ -1,0 +1,144 @@
+{
+  "database": {
+    "connections": {
+      "sqlite": {
+        "defaultPath": "./data/database.sqlite"
+      },
+      "postgresql": {
+        "defaultHost": "localhost",
+        "defaultPort": 5432
+      },
+      "mysql": {
+        "defaultHost": "localhost",
+        "defaultPort": 3306
+      },
+      "sqlserver": {
+        "defaultHost": "localhost",
+        "defaultPort": 1433
+      },
+      "mongodb": {
+        "defaultConnectionString": "mongodb://localhost:27017"
+      }
+    }
+  },
+  "llm": {
+    "providers": {
+      "openai": {
+        "defaultModel": "gpt-4",
+        "apiEndpoint": "https://api.openai.com/v1"
+      },
+      "anthropic": {
+        "defaultModel": "claude-3-opus",
+        "apiEndpoint": "https://api.anthropic.com"
+      },
+      "google": {
+        "defaultModel": "gemini-pro",
+        "apiEndpoint": "https://generativelanguage.googleapis.com"
+      },
+      "azure": {
+        "defaultModel": "gpt-4"
+      }
+    }
+  },
+  "application": {
+    "build": {
+      "defaultOutputDir": "./dist",
+      "electronForgeConfig": {
+        "packagerConfig": {
+          "asar": true
+        },
+        "makers": [
+          {
+            "name": "@electron-forge/maker-squirrel",
+            "config": {
+              "name": "anvil_app"
+            }
+          },
+          {
+            "name": "@electron-forge/maker-zip",
+            "platforms": ["darwin"]
+          },
+          {
+            "name": "@electron-forge/maker-deb",
+            "config": {}
+          },
+          {
+            "name": "@electron-forge/maker-rpm",
+            "config": {}
+          }
+        ]
+      }
+    }
+  },
+  "ui": {
+    "theme": {
+      "defaultTheme": "light",
+      "themes": {
+        "light": {
+          "primary": "#0078d4",
+          "secondary": "#2b88d8",
+          "background": "#ffffff",
+          "surface": "#f3f2f1",
+          "error": "#d13438",
+          "onPrimary": "#ffffff",
+          "onSecondary": "#ffffff",
+          "onBackground": "#323130",
+          "onSurface": "#323130",
+          "onError": "#ffffff"
+        },
+        "dark": {
+          "primary": "#2b88d8",
+          "secondary": "#0078d4",
+          "background": "#201f1e",
+          "surface": "#323130",
+          "error": "#f1707b",
+          "onPrimary": "#ffffff",
+          "onSecondary": "#ffffff",
+          "onBackground": "#f3f2f1",
+          "onSurface": "#f3f2f1",
+          "onError": "#201f1e"
+        }
+      }
+    },
+    "workspace": {
+      "defaultWidth": 800,
+      "defaultHeight": 600,
+      "gridSize": 8,
+      "snapToGrid": true
+    }
+  },
+  "project": {
+    "defaults": {
+      "author": "Anvil User",
+      "window": {
+        "width": 1280,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600
+      },
+      "buildPlatforms": ["win32", "darwin", "linux"]
+    }
+  },
+  "nodes": {
+    "defaults": {
+      "controlFlow": {
+        "loopInitialCount": 10,
+        "forEachDefaultVariable": "item",
+        "ifDefaultCondition": true
+      },
+      "string": {
+        "defaultDelimiter": ",",
+        "defaultFormat": "{0}"
+      },
+      "database": {
+        "defaultLimit": 100,
+        "defaultOffset": 0
+      },
+      "llm": {
+        "defaultTemperature": 0.7,
+        "defaultMaxTokens": 1000,
+        "defaultSystemPrompt": "You are a helpful assistant."
+      }
+    }
+  }
+}

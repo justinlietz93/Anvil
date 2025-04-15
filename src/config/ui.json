@@ -1,0 +1,37 @@
+{
+  "theme": {
+    "defaultTheme": "light",
+    "themes": {
+      "light": {
+        "primary": "#0078d4",
+        "secondary": "#2b88d8",
+        "background": "#ffffff",
+        "surface": "#f3f2f1",
+        "error": "#d13438",
+        "onPrimary": "#ffffff",
+        "onSecondary": "#ffffff",
+        "onBackground": "#323130",
+        "onSurface": "#323130",
+        "onError": "#ffffff"
+      },
+      "dark": {
+        "primary": "#2b88d8",
+        "secondary": "#0078d4",
+        "background": "#201f1e",
+        "surface": "#323130",
+        "error": "#f1707b",
+        "onPrimary": "#ffffff",
+        "onSecondary": "#ffffff",
+        "onBackground": "#f3f2f1",
+        "onSurface": "#f3f2f1",
+        "onError": "#201f1e"
+      }
+    }
+  },
+  "workspace": {
+    "defaultWidth": 800,
+    "defaultHeight": 600,
+    "gridSize": 8,
+    "snapToGrid": true
+  }
+}
