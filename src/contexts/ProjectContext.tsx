@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 // Blueprint type definition
 export interface Blueprint {
@@ -43,6 +44,17 @@ export interface Component {
   icon?: string;
 }
 
+// Component instance for the workspace
+export interface ComponentInstance {
+  id: string;
+  type: string;
+  name: string;
+  props: Record<string, any>;
+  styles: Record<string, any>;
+  events: Record<string, any>;
+  children: ComponentInstance[];
+}
+
 // Component property definition
 export interface ComponentProperty {
   id: string;
@@ -81,11 +93,22 @@ export interface ProjectMetadata {
   settings: Record<string, any>;
 }
 
+// Full project data
+export interface Project {
+  metadata: ProjectMetadata;
+  components: ComponentInstance[]; // Component instances in the workspace
+  blueprints: Blueprint[];
+}
+
 // The ProjectContext type definition
 interface ProjectContextType {
   // Project metadata
   projectMetadata: ProjectMetadata | null;
   setProjectMetadata: (metadata: ProjectMetadata) => void;
+  
+  // Project components (instances in the workspace)
+  project: Project | null;
+  updateProject: (updates: Partial<Project>) => void;
   
   // Blueprints
   blueprints: Blueprint[];
@@ -139,10 +162,20 @@ const defaultProjectMetadata: ProjectMetadata = {
   settings: {}
 };
 
+// Default project
+const defaultProject: Project = {
+  metadata: defaultProjectMetadata,
+  components: [],
+  blueprints: []
+};
+
 // Create the default context
 const defaultProjectContext: ProjectContextType = {
   projectMetadata: null,
   setProjectMetadata: () => {},
+  
+  project: null,
+  updateProject: () => {},
   
   blueprints: [],
   getBlueprint: () => undefined,
@@ -189,6 +222,9 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
   // Project metadata
   const [projectMetadata, setProjectMetadata] = useState<ProjectMetadata | null>(null);
   
+  // Current project
+  const [project, setProject] = useState<Project | null>(null);
+  
   // Blueprints
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   
@@ -198,6 +234,24 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
   // Project state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  /**
+   * Update the current project
+   */
+  const updateProject = (updates: Partial<Project>): void => {
+    if (!project) return;
+    
+    setProject({
+      ...project,
+      ...updates,
+      metadata: {
+        ...project.metadata,
+        updatedAt: new Date().toISOString()
+      }
+    });
+    
+    setHasUnsavedChanges(true);
+  };
   
   /**
    * Get a blueprint by ID
@@ -466,6 +520,14 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
     };
     
     setProjectMetadata(metadata);
+    
+    // Initialize the project
+    setProject({
+      metadata,
+      components: [],
+      blueprints: []
+    });
+    
     setBlueprints([]);
     setComponents([]);
     setHasUnsavedChanges(false);
@@ -573,12 +635,19 @@ export const ProjectProvider = ({ children }: ProjectProviderProps) => {
     if (!projectMetadata) {
       setProjectMetadata(defaultProjectMetadata);
     }
-  }, [projectMetadata]);
+    
+    if (!project) {
+      setProject(defaultProject);
+    }
+  }, [projectMetadata, project]);
   
   return (
     <ProjectContext.Provider value={{
       projectMetadata,
       setProjectMetadata,
+      
+      project,
+      updateProject,
       
       blueprints,
       getBlueprint,

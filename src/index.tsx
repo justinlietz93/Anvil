@@ -4,7 +4,7 @@ import { initializeIcons } from '@fluentui/react/lib/Icons';
 import App from './App';
 import './index.css';
 
-// Initialize Fluent UI icons
+// Make sure icons are initialized
 initializeIcons();
 
 // Create root and render app

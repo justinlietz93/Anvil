@@ -1,35 +1,12 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { Stack, IStackStyles, IconButton, DefaultButton } from '@fluentui/react';
+import { Stack, IconButton } from '@fluentui/react';
 import { ProjectContext } from '../../contexts/ProjectContext';
 import { UIContext } from '../../contexts/UIContext';
 import { ComponentRegistry } from '../../services/ComponentRegistry';
-
-// Styles
-const workspaceStyles: IStackStyles = {
-  root: {
-    position: 'relative',
-    height: '100%',
-    overflow: 'hidden',
-  },
-};
-
-const canvasStyles: IStackStyles = {
-  root: {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    overflow: 'auto',
-    backgroundColor: '#252525',
-  },
-};
-
-// Resizer handle positions
-const resizerPositions = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
+import './Workspace.css';
 
 /**
  * Workspace component for the visual GUI builder
- * 
- * @author Justin Lietz
  */
 export const Workspace: React.FC = () => {
   // Contexts
@@ -62,21 +39,32 @@ export const Workspace: React.FC = () => {
   // State
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState<{ 
+    visible: boolean; 
+    x: number; 
+    y: number;
+    componentId: string | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    componentId: null
+  });
   
   // Effects
   useEffect(() => {
     // Add global mouse event listeners for drag operations
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current.isDragging || !dragRef.current.componentId) return;
+      if (!dragRef.current.isDragging || !dragRef.current.componentId || !project) return;
       
       const { componentId, initialPos, initialMousePos, type, resizeHandle } = dragRef.current;
-      const component = project?.components.find(c => c.id === componentId);
+      const component = project.components.find(c => c.id === componentId);
       if (!component) return;
       
       const deltaX = e.clientX - initialMousePos.x;
       const deltaY = e.clientY - initialMousePos.y;
       
-      const updatedComponents = project?.components.map(comp => {
+      const updatedComponents = project.components.map(comp => {
         if (comp.id !== componentId) return comp;
         
         const styles = { ...comp.styles };
@@ -87,8 +75,8 @@ export const Workspace: React.FC = () => {
             ...comp,
             styles: {
               ...styles,
-              left: `${parseInt(initialPos.x + deltaX)}px`,
-              top: `${parseInt(initialPos.y + deltaY)}px`
+              left: `${parseInt((initialPos.x + deltaX).toString())}px`,
+              top: `${parseInt((initialPos.y + deltaY).toString())}px`
             }
           };
         } else if (type === 'resize' && resizeHandle) {
@@ -136,7 +124,7 @@ export const Workspace: React.FC = () => {
         }
         
         return comp;
-      }) || [];
+      });
       
       updateProject({ components: updatedComponents });
     };
@@ -146,14 +134,26 @@ export const Workspace: React.FC = () => {
       dragRef.current.componentId = null;
     };
     
+    // Close context menu when clicking outside
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenu.visible) {
+        const menuElement = document.getElementById('component-context-menu');
+        if (menuElement && !menuElement.contains(e.target as Node)) {
+          setContextMenu({ ...contextMenu, visible: false });
+        }
+      }
+    };
+    
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousedown', handleClickOutside);
     
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [project, updateProject]);
+  }, [project, updateProject, contextMenu]);
   
   // Handle drag over
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -186,11 +186,11 @@ export const Workspace: React.FC = () => {
       // Get drop data
       const data = JSON.parse(event.dataTransfer.getData('application/json'));
       
-      if (data.type === 'component') {
+      if (data.type === 'component' && project) {
         // Create new component instance
         const newComponent = ComponentRegistry.createComponentInstance(data.componentId);
         
-        if (newComponent && project) {
+        if (newComponent) {
           // Set position
           newComponent.styles = {
             ...newComponent.styles,
@@ -206,7 +206,7 @@ export const Workspace: React.FC = () => {
           };
           
           // Add to project
-          const updatedComponents = [...project.components, newComponent];
+          const updatedComponents = [...(project.components || []), newComponent];
           updateProject({ components: updatedComponents });
           
           // Select the new component
@@ -294,7 +294,12 @@ export const Workspace: React.FC = () => {
   // Handle context menu for components
   const handleContextMenu = (event: React.MouseEvent, component: any) => {
     event.preventDefault();
-    // TODO: Show context menu for additional actions
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      componentId: component.id
+    });
   };
   
   // Handle component double click
@@ -305,6 +310,58 @@ export const Workspace: React.FC = () => {
     setSelectedComponentIds([component.id]);
     setSelectedComponent(component);
     setPropertiesPanelOpen(true);
+  };
+
+  // Handle context menu actions
+  const handleContextMenuAction = (action: string) => {
+    if (!contextMenu.componentId || !project) return;
+    
+    switch (action) {
+      case 'edit':
+        // Select component and open properties
+        const component = project.components.find(c => c.id === contextMenu.componentId);
+        if (component) {
+          setSelectedComponentIds([component.id]);
+          setSelectedComponent(component);
+          setPropertiesPanelOpen(true);
+        }
+        break;
+        
+      case 'delete':
+        // Remove component from project
+        const updatedComponents = project.components.filter(c => c.id !== contextMenu.componentId);
+        updateProject({ components: updatedComponents });
+        setSelectedComponentIds([]);
+        setSelectedComponent(null);
+        break;
+        
+      case 'duplicate':
+        // Duplicate the component
+        const origComponent = project.components.find(c => c.id === contextMenu.componentId);
+        if (origComponent) {
+          const newComponent = {
+            ...JSON.parse(JSON.stringify(origComponent)), // Deep clone
+            id: `comp-${Date.now()}`
+          };
+          
+          // Offset position slightly
+          const left = parseInt(newComponent.styles.left as string) || 0;
+          const top = parseInt(newComponent.styles.top as string) || 0;
+          newComponent.styles.left = `${left + 20}px`;
+          newComponent.styles.top = `${top + 20}px`;
+          
+          const updatedComponents = [...project.components, newComponent];
+          updateProject({ components: updatedComponents });
+          
+          // Select the new component
+          setSelectedComponentIds([newComponent.id]);
+          setSelectedComponent(newComponent);
+        }
+        break;
+    }
+    
+    // Close the context menu
+    setContextMenu({ ...contextMenu, visible: false });
   };
   
   // Render component
@@ -323,8 +380,6 @@ export const Workspace: React.FC = () => {
           ...component.styles,
           position: component.styles.position || 'absolute',
           cursor: isSelected ? 'move' : 'pointer',
-          border: isSelected ? '1px solid #0078d4' : component.styles.border || '1px solid transparent',
-          boxShadow: isSelected ? '0 0 0 2px rgba(0, 120, 212, 0.4)' : 'none'
         }}
         onClick={(e) => handleComponentClick(e, component)}
         onMouseDown={(e) => handleComponentMouseDown(e, component)}
@@ -333,96 +388,98 @@ export const Workspace: React.FC = () => {
       >
         <div className="component-content">
           {componentDef.renderComponent(component.props)}
-          {component.children.map((child: any) => renderComponent(child))}
+          {component.children && component.children.map((child: any) => renderComponent(child))}
         </div>
         
         {/* Render resize handles when selected */}
-        {isSelected && resizerPositions.map(pos => (
+        {isSelected && ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'].map(pos => (
           <div 
             key={`resize-${pos}`}
             className={`component-resize-handle resize-${pos}`}
-            style={{
-              position: 'absolute',
-              width: pos.includes('n') || pos.includes('s') ? '10px' : '6px',
-              height: pos.includes('e') || pos.includes('w') ? '10px' : '6px',
-              background: '#0078d4',
-              borderRadius: '50%',
-              ...(pos.includes('n') ? { top: '-4px' } : {}),
-              ...(pos.includes('s') ? { bottom: '-4px' } : {}),
-              ...(pos.includes('e') ? { right: '-4px' } : {}),
-              ...(pos.includes('w') ? { left: '-4px' } : {}),
-              ...(pos === 'n' ? { left: 'calc(50% - 3px)' } : {}),
-              ...(pos === 's' ? { left: 'calc(50% - 3px)' } : {}),
-              ...(pos === 'e' ? { top: 'calc(50% - 3px)' } : {}),
-              ...(pos === 'w' ? { top: 'calc(50% - 3px)' } : {}),
-              ...(pos === 'nw' ? { cursor: 'nw-resize' } : {}),
-              ...(pos === 'n' ? { cursor: 'n-resize' } : {}),
-              ...(pos === 'ne' ? { cursor: 'ne-resize' } : {}),
-              ...(pos === 'e' ? { cursor: 'e-resize' } : {}),
-              ...(pos === 'se' ? { cursor: 'se-resize' } : {}),
-              ...(pos === 's' ? { cursor: 's-resize' } : {}),
-              ...(pos === 'sw' ? { cursor: 'sw-resize' } : {}),
-              ...(pos === 'w' ? { cursor: 'w-resize' } : {}),
-              zIndex: 100
-            }}
           />
         ))}
         
         {/* Component label when selected */}
         {isSelected && (
-          <div
-            className="component-label"
-            style={{
-              position: 'absolute',
-              top: '-24px',
-              left: '0',
-              background: '#0078d4',
-              color: 'white',
-              padding: '2px 6px',
-              fontSize: '11px',
-              borderRadius: '2px',
-              whiteSpace: 'nowrap',
-              zIndex: 101
-            }}
-          >
-            {component.type}
+          <div className="component-label">
+            {component.name || componentDef.name}
           </div>
         )}
       </div>
     );
   };
+
+  // Render context menu
+  const renderContextMenu = () => {
+    if (!contextMenu.visible) return null;
+    
+    return (
+      <div 
+        id="component-context-menu"
+        className="component-context-menu"
+        style={{ 
+          top: `${contextMenu.y}px`,
+          left: `${contextMenu.x}px`
+        }}
+      >
+        <div className="context-menu-item" onClick={() => handleContextMenuAction('edit')}>
+          <i className="ms-Icon ms-Icon--Edit"></i>
+          Edit Properties
+        </div>
+        <div className="context-menu-item" onClick={() => handleContextMenuAction('duplicate')}>
+          <i className="ms-Icon ms-Icon--Copy"></i>
+          Duplicate
+        </div>
+        <div className="context-menu-separator"></div>
+        <div className="context-menu-item" onClick={() => handleContextMenuAction('delete')}>
+          <i className="ms-Icon ms-Icon--Delete"></i>
+          Delete
+        </div>
+      </div>
+    );
+  };
   
   return (
-    <Stack styles={workspaceStyles} className="anvil-workspace">
+    <Stack className="anvil-workspace" style={{ height: '100%' }}>
       <div
         ref={canvasRef}
         className="anvil-canvas"
-        style={canvasStyles.root}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleCanvasClick}
       >
         {/* Render components */}
-        {project?.components.map(component => renderComponent(component))}
+        {project?.components && project.components.map(component => renderComponent(component))}
         
         {/* Drag placeholder */}
         {isDraggingOver && (
           <div
             className="anvil-component-placeholder"
             style={{
-              position: 'absolute',
               left: `${dragPosition.x}px`,
               top: `${dragPosition.y}px`,
               width: '150px',
               height: '40px',
-              border: '2px dashed #0078d4',
-              backgroundColor: 'rgba(0, 120, 212, 0.1)',
-              borderRadius: '2px',
-              pointerEvents: 'none',
-              zIndex: 999
             }}
           />
+        )}
+        
+        {/* Context menu */}
+        {renderContextMenu()}
+        
+        {/* Empty state message */}
+        {(!project?.components || project.components.length === 0) && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#888',
+            textAlign: 'center'
+          }}>
+            <p>Drag components from the sidebar to start building your application.</p>
+          </div>
         )}
       </div>
     </Stack>
