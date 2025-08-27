@@ -6,10 +6,11 @@ import { StringNodes } from './StringNodes';
 import { LogicNodes } from './LogicNodes';
 import { UIEventNodes } from './UIEventNodes';
 import { UIComponentNodes } from './UIComponentNodes';
+import { LLMNodes } from './LLMNodes';
 
 /**
  * Main entry point for all built-in nodes
- * 
+ *
  * @author Justin Lietz
  */
 
@@ -21,7 +22,8 @@ export const BuiltInNodes = [
   ...StringNodes,
   ...LogicNodes,
   ...UIEventNodes,
-  ...UIComponentNodes
+  ...UIComponentNodes,
+  ...LLMNodes
 ];
 
 // Export individual node categories for direct access
@@ -32,5 +34,6 @@ export {
   StringNodes,
   LogicNodes,
   UIEventNodes,
-  UIComponentNodes
+  UIComponentNodes,
+  LLMNodes
 };

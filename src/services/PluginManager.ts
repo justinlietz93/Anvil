@@ -6,8 +6,12 @@ import { v4 as uuidv4 } from 'uuid';
 let ivm: any;
 
 try {
-  // Try to import the real module
-  ivm = require('isolated-vm');
+  // Try to import the real module. Use eval('require') so bundlers like webpack
+  // won't statically analyze and attempt to resolve this native-only module
+  // during renderer builds.
+  // eslint-disable-next-line no-eval
+  const dynamicRequire: any = eval('require');
+  ivm = dynamicRequire('isolated-vm');
 } catch (e) {
   // Create mock implementation if module is not available
   console.warn('isolated-vm module not available, using mock implementation');

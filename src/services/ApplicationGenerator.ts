@@ -2,7 +2,8 @@ import { ConfigManager } from './ConfigManager';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as electron from 'electron';
+import { generateWebAppFiles } from './ProjectCodeGenerator';
+import type { Project } from '../contexts/ProjectContext';
 
 // Mock electron-builder for development purposes
 // This avoids the need for the actual dependency during development
@@ -27,6 +28,7 @@ export interface BuildConfig {
   outputDir: string;
   includeDevTools: boolean;
   targetPlatforms: string[];
+  project?: Project;
 }
 
 /**
@@ -283,8 +285,20 @@ window.addEventListener('DOMContentLoaded', () => {
       
       fs.writeFileSync(path.join(tempDir, 'preload.js'), preloadJs);
       
-      // Create index.html
-      const indexHtml = `
+      // Create application files (index.html, styles.css, renderer.js)
+      let indexHtml: string;
+      let stylesCss: string;
+      let rendererJs: string;
+
+      if (config.project) {
+        const generated = generateWebAppFiles(config.project as Project);
+        // Ensure Electron uses renderer.js as the script name
+        indexHtml = generated.indexHtml.replace('app.js', 'renderer.js');
+        stylesCss = generated.stylesCss;
+        rendererJs = generated.appJs;
+      } else {
+        // Fallback to default Electron demo content
+        indexHtml = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -310,12 +324,8 @@ window.addEventListener('DOMContentLoaded', () => {
     <script src="renderer.js"></script>
   </body>
 </html>
-      `;
-      
-      fs.writeFileSync(path.join(tempDir, 'index.html'), indexHtml);
-      
-      // Create styles.css
-      const stylesCss = `
+        `;
+        stylesCss = `
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
@@ -357,19 +367,18 @@ p {
   border-radius: 5px;
   font-size: 0.9em;
 }
-      `;
-      
+        `;
+        rendererJs = `
+ // This file is required by the index.html file and will
+ // be executed in the renderer process for that window.
+ // No Node.js APIs are available in this process because
+ // 'nodeIntegration' is turned off.
+ console.log('Renderer process started');
+        `;
+      }
+
+      fs.writeFileSync(path.join(tempDir, 'index.html'), indexHtml);
       fs.writeFileSync(path.join(tempDir, 'styles.css'), stylesCss);
-      
-      // Create renderer.js
-      const rendererJs = `
-// This file is required by the index.html file and will
-// be executed in the renderer process for that window.
-// No Node.js APIs are available in this process because
-// 'nodeIntegration' is turned off.
-console.log('Renderer process started');
-      `;
-      
       fs.writeFileSync(path.join(tempDir, 'renderer.js'), rendererJs);
       
       this.updateProgress(40, 'Building Electron application...');
@@ -466,8 +475,15 @@ console.log('Renderer process started');
     try {
       this.updateProgress(30, 'Creating web application files...');
       
-      // Create index.html
-      const indexHtml = `
+      // Create app files (index.html, styles.css, app.js)
+      if (config.project) {
+        const generated = generateWebAppFiles(config.project as Project);
+        fs.writeFileSync(path.join(webDir, 'index.html'), generated.indexHtml);
+        fs.writeFileSync(path.join(webDir, 'styles.css'), generated.stylesCss);
+        fs.writeFileSync(path.join(webDir, 'app.js'), generated.appJs);
+      } else {
+        // Default web demo content
+        const indexHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -492,12 +508,10 @@ console.log('Renderer process started');
     <script src="app.js"></script>
   </body>
 </html>
-      `;
-      
-      fs.writeFileSync(path.join(webDir, 'index.html'), indexHtml);
-      
-      // Create styles.css
-      const stylesCss = `
+        `;
+        fs.writeFileSync(path.join(webDir, 'index.html'), indexHtml);
+
+        const stylesCss = `
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
@@ -538,19 +552,17 @@ p {
   background-color: #e8f4fc;
   border-radius: 5px;
 }
-      `;
-      
-      fs.writeFileSync(path.join(webDir, 'styles.css'), stylesCss);
-      
-      // Create app.js
-      const appJs = `
-// Main application script
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Application initialized');
-});
-      `;
-      
-      fs.writeFileSync(path.join(webDir, 'app.js'), appJs);
+        `;
+        fs.writeFileSync(path.join(webDir, 'styles.css'), stylesCss);
+
+        const appJs = `
+ // Main application script
+ document.addEventListener('DOMContentLoaded', () => {
+   console.log('Application initialized');
+ });
+        `;
+        fs.writeFileSync(path.join(webDir, 'app.js'), appJs);
+      }
       
       this.updateProgress(70, 'Finalizing web application...');
       

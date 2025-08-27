@@ -1031,7 +1031,7 @@ const createWindow = () => {
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: 'C:\\git\\Anvil\\Anvil\\.webpack\\renderer\\main_window\\preload.js',
+      preload: '/mnt/ironwolf/git/projects/anvil/Anvil/.webpack/renderer/main_window/preload.js',
       contextIsolation: true,
       nodeIntegration: false,
     },
